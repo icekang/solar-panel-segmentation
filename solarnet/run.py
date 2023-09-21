@@ -13,7 +13,7 @@ from solarnet.models import Classifier, Segmenter, train_classifier, train_segme
 class RunTask:
 
     @staticmethod
-    def make_masks(data_folder='data'):
+    def make_masks(data_folder='data', target_city=None):
         """Saves masks for each .tif image in the raw dataset. Masks are saved
         in  <org_folder>_mask/<org_filename>.npy where <org_folder> should be the
         city name, as defined in `data/README.md`.
@@ -24,7 +24,7 @@ class RunTask:
             Path of the data folder, which should be set up as described in `data/README.md`
         """
         mask_maker = MaskMaker(data_folder=Path(data_folder))
-        mask_maker.process()
+        mask_maker.process(target_city)
 
     @staticmethod
     def split_images(data_folder='data', imsize=224, empty_ratio=2):
