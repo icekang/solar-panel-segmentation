@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-# from patchify import patchify, unpatchify
+from osgeo import gdal
 
 from solarnet.datasets.utils import normalize
 
@@ -26,7 +26,12 @@ def _load_image(image_path: str) -> np.ndarray:
 
     return image
 
-
+def _check_resolution(image_path: str) -> float:
+    dataset = gdal.Open(image_path)
+    geotransform = dataset.GetGeoTransform()
+    pixel_width = abs(geotransform[1])
+    # pixel_height = abs(geotransform[5])
+    return round(pixel_width, 3)
 # def ____segment_image(image_path: str, model: Segmenter, model_input_size=224, original_resolution=0.075, target_resolution=0.3) -> np.ndarray:
 #     image = _load_image(image_path)
 #     # Resize the image to the target resolution
@@ -219,6 +224,6 @@ if __name__ == '__main__':
     gic_data_dir = Path('../Solar Panels Dataset - GeoTIFF/Solar Panels Dataset - GeoTIFF/')
 
     for filename in os.listdir(gic_data_dir):
-        break
         if filename.endswith('.tiff'):
-            segment_image(str(gic_data_dir / filename), get_model())
+            original_resolution = _check_resolution(str(gic_data_dir / filename))
+            segment_image(str(gic_data_dir / filename), get_model(), model_input_size=224, original_resolution=original_resolution, target_resolution=0.3)
