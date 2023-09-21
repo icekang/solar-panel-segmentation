@@ -27,7 +27,7 @@ class RunTask:
         mask_maker.process(target_city)
 
     @staticmethod
-    def split_images(data_folder='data', imsize=224, empty_ratio=2):
+    def split_images(data_folder='data', imsize=224, empty_ratio=2, target_city=None):
         """Generates images (and their corresponding masks) of height = width = imsize
         for input into the models.
 
@@ -43,7 +43,7 @@ class RunTask:
             patience, having this number slightly > 1 yields a roughly 1:1 ratio.
         """
         splitter = ImageSplitter(data_folder=Path(data_folder))
-        splitter.process(imsize=imsize, empty_ratio=empty_ratio)
+        splitter.process(imsize=imsize, empty_ratio=empty_ratio, target_city=target_city)
 
     @staticmethod
     def train_classifier(max_epochs=100, warmup=2, patience=5, val_size=0.1,
