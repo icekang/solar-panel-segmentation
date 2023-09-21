@@ -42,11 +42,13 @@ class MaskMaker:
         )
         return polygon_images, polygon_pixels
 
-    def process(self) -> None:
+    def process(self, target_city=None) -> None:
 
         polygon_images, polygon_pixels = self._read_data()
 
         for city, files in polygon_images.items():
+            if target_city is not None and target_city != city: continue
+
             print(f'Processing {city}')
             # first, we make sure the mask file exists; if not,
             # we make it
@@ -57,6 +59,9 @@ class MaskMaker:
             for image, polygons in tqdm(files.items()):
                 mask = np.zeros((x_size, y_size))
                 for polygon in polygons:
+                    if polygon not in polygon_pixels:
+                        print(f'Polygon {polygon} not found in {city}')
+                        continue
                     mask += self.make_mask(polygon_pixels[polygon], (x_size, y_size))
 
                 np.save(masked_city / f"{image}.npy", mask)
@@ -64,7 +69,7 @@ class MaskMaker:
     @staticmethod
     def _csv_to_dict_polygon_pixels(polygon_pixels: pd.DataFrame) -> dict:
         output_dict = {}
-
+    
         for idx, row in polygon_pixels.iterrows():
             vertices = []
             for i in range(1, int(row.number_vertices) + 1):

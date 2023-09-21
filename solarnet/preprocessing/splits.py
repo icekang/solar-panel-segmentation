@@ -4,6 +4,7 @@ import pandas as pd
 from collections import defaultdict
 from pathlib import Path
 import rasterio
+import cv2
 from tqdm import tqdm
 
 from typing import Tuple
@@ -119,6 +120,28 @@ class ImageSplitter:
                 # first, lets collect the positive examples
                 for centroid in centroids:
                     x, y = self.adjust_coords(centroid, image_radius, (org_x_imsize, org_y_imsize))
+
+                    # max_width, max_height = int(x + image_radius), int(y + image_radius)
+                    # min_width, min_height = max_width - imsize, max_height - imsize
+
+                    # # Jitter the coordinates a bit so that the model is not biased towards the center
+                    # # First, we find the bounding box of the mask
+                    # contours, hierarchy = cv2.findContours(255 * mask_file[min_width:max_width, min_height: max_height].astype('uint8'), 1, 2)
+                    # x_mask, y_mask, width_mask, height_mask = cv2.boundingRect(contours[0])
+                    # # Then, we convert the bounding box to the original image coordinates
+                    # xmin_mask = x_mask + min_width
+                    # ymin_mask = y_mask + min_height
+                    # xmax_mask = xmin_mask + width_mask
+                    # ymax_mask = ymin_mask + height_mask
+
+                    # # Next, randomly select a point, by ensuring that the whole mask is in the image
+                    # x = randint(xmax_mask - image_radius, xmin_mask + image_radius)
+                    # y = randint(ymax_mask - image_radius, ymin_mask + image_radius)
+
+                    # # Finally, we make sure that when we crop the image, the mask is still in the image
+                    # x, y = self.adjust_coords((x, y), image_radius, (org_x_imsize, org_y_imsize))
+
+                    # # Now, recalculate the crop coordinates
                     max_width, max_height = int(x + image_radius), int(y + image_radius)
                     min_width, min_height = max_width - imsize, max_height - imsize
 
@@ -126,7 +149,9 @@ class ImageSplitter:
                     mask = mask_file[min_width: max_width, min_height: max_height]
 
                     if self.size_okay(clipped_orgfile, imsize):
+                        # cv2.imwrite(str(self.solar_panels / f"org/{city}_{im_idx}.png"), np.moveaxis(clipped_orgfile, 0, -1))
                         np.save(self.solar_panels / f"org/{city}_{im_idx}.npy", clipped_orgfile)
+                        # cv2.imwrite(str(self.solar_panels / f"mask/{city}_{im_idx}.png"), np.moveaxis(mask, 0, -1) * 255)
                         np.save(self.solar_panels / f"mask/{city}_{im_idx}.npy", mask)
 
                         im_idx += 1
