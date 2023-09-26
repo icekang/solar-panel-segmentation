@@ -102,6 +102,7 @@ class ImageSplitter:
 
         image_radius = imsize // 2
         centroids_dict = self.read_centroids()
+        np.random.seed(0)
 
         im_idx = 0
         for city, images in centroids_dict.items():
