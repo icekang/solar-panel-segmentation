@@ -118,6 +118,9 @@ class ImageSplitter:
                     print(f'{city}/{image_name}.tif is malformed with shape {org_file.shape}. '
                           f'Skipping!')
                     continue
+                if not (self.data_folder / f"{city}_masks/{image_name}.npy").exists():
+                    print(f'{self.data_folder / f"{city}_masks/{image_name}.npy"} does not exist, skipping')
+                    continue
                 mask_file = np.load(self.data_folder / f"{city}_masks/{image_name}.npy")
 
                 # first, lets collect the positive examples
@@ -130,23 +133,27 @@ class ImageSplitter:
                     # Jitter the coordinates a bit so that the model is not biased towards the center
                     # First, we find the bounding box of the mask
                     contours, hierarchy = cv2.findContours(255 * mask_file[min_width:max_width, min_height: max_height].astype('uint8'), 1, 2)
-                    x_mask, y_mask, width_mask, height_mask = cv2.boundingRect(contours[0])
-                    # Then, we convert the bounding box to the original image coordinates
-                    xmin_mask = x_mask + min_width
-                    ymin_mask = y_mask + min_height
-                    xmax_mask = xmin_mask + width_mask
-                    ymax_mask = ymin_mask + height_mask
+                    if len(contours) == 0:
+                        continue
+                        # print(f'{self.data_folder / f"{city}_masks/{image_name}.npy"} has no contour, min_width, max_width, min_height, max_height {min_width, max_width, min_height, max_height}')
+                    else:
+                        x_mask, y_mask, width_mask, height_mask = cv2.boundingRect(contours[0])
+                        # Then, we convert the bounding box to the original image coordinates
+                        xmin_mask = x_mask + min_width
+                        ymin_mask = y_mask + min_height
+                        xmax_mask = xmin_mask + width_mask
+                        ymax_mask = ymin_mask + height_mask
 
-                    # Next, randomly select a point, by ensuring that the whole mask is in the image
-                    x = randint(xmax_mask - image_radius, xmin_mask + image_radius) if xmax_mask - image_radius < xmin_mask + image_radius else x
-                    y = randint(ymax_mask - image_radius, ymin_mask + image_radius) if ymax_mask - image_radius < ymin_mask + image_radius else y
+                        # Next, randomly select a point, by ensuring that the whole mask is in the image
+                        x = randint(xmax_mask - image_radius, xmin_mask + image_radius) if xmax_mask - image_radius < xmin_mask + image_radius else x
+                        y = randint(ymax_mask - image_radius, ymin_mask + image_radius) if ymax_mask - image_radius < ymin_mask + image_radius else y
 
-                    # Finally, we make sure that when we crop the image, the mask is still in the image
-                    x, y = self.adjust_coords((x, y), image_radius, (org_x_imsize, org_y_imsize))
+                        # Finally, we make sure that when we crop the image, the mask is still in the image
+                        x, y = self.adjust_coords((x, y), image_radius, (org_x_imsize, org_y_imsize))
 
-                    # Now, recalculate the crop coordinates
-                    max_width, max_height = int(x + image_radius), int(y + image_radius)
-                    min_width, min_height = max_width - imsize, max_height - imsize
+                        # Now, recalculate the crop coordinates
+                        max_width, max_height = int(x + image_radius), int(y + image_radius)
+                        min_width, min_height = max_width - imsize, max_height - imsize
 
                     clipped_orgfile = org_file[:, min_width: max_width, min_height: max_height]
                     mask = mask_file[min_width: max_width, min_height: max_height]
